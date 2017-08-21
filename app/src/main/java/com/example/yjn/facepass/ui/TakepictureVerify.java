@@ -28,6 +28,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.yjn.facepass.R;
+import com.example.yjn.facepass.bean.Constant;
 import com.example.yjn.facepass.bean.FaceCompare;
 import com.example.yjn.facepass.utils.SPUtils;
 import com.example.yjn.facepass.widget.CameraPreview;
@@ -195,8 +196,8 @@ public class TakepictureVerify extends AppCompatActivity {
         // https://console.faceplusplus.com.cn/documents/4887586
         OkGo.<String>post("https://api-cn.faceplusplus.com/facepp/v3/compare")
                 .tag(this)
-                .params("api_key", "fh_Fb-7Yl1WaWIIIdCEMwUqX6yd18dMf")
-                .params("api_secret", "71f0-3GeI4AtzNbtF7EUJsOl06z-8aXN")
+                .params("api_key", Constant.KEY)
+                .params("api_secret", Constant.SECRET)
                 .params("image_file1", new File(imgPath))//自己拍照的
                 .params("image_file2", new File(registerImg)) //对比的对象图
                 .execute(new StringCallback() {
