@@ -218,8 +218,7 @@ public class TakepictureVerify extends AppCompatActivity {
                             if (faceCompare.getThresholds() == null) {
                                 //如果传入图片但图片中未检测到人脸，则无法进行比对，本字段不返回。
                                 Toast.makeText(TakepictureVerify.this, "未识别到人脸", Toast.LENGTH_SHORT).show();
-                                progDialog.dismiss();
-                                return;
+                                finishThen2Main();
                             }
                             if (faceCompare.getConfidence() < faceCompare.getThresholds().get_$1e3()) {
                                 Toast.makeText(TakepictureVerify.this, "不是同一个人", Toast.LENGTH_SHORT).show();
@@ -238,19 +237,22 @@ public class TakepictureVerify extends AppCompatActivity {
                             Toast.makeText(TakepictureVerify.this, "匹配失败", Toast.LENGTH_SHORT).show();
                         }
 
-                        progDialog.dismiss();
-                        finish();
+                        finishThen2Main();
                     }
 
                     @Override
                     public void onError(Response<String> response) {
-                        progDialog.dismiss();
+                        finishThen2Main();
                         Log.e("yjn", "上传失败");
                         Toast.makeText(TakepictureVerify.this, "匹配出错", Toast.LENGTH_SHORT).show();
-                        finish();
                     }
                 });
 
+    }
+
+    private void finishThen2Main() {
+        progDialog.dismiss();
+        finish();
     }
 
     /**
