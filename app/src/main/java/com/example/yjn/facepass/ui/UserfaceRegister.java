@@ -80,56 +80,53 @@ public class UserfaceRegister extends AppCompatActivity {
                 progDialog.show();
 
                 final ProgressDialog finalProgDialog = progDialog;
-                cm1.takePicture(null, null, new Camera.PictureCallback() {
-                    @Override
-                    public void onPictureTaken(byte[] data, Camera camera) {
-                        try {
-                            File file = new File(Environment.getExternalStorageDirectory(), "test0");
-                            FileOutputStream fos = new FileOutputStream(file);
-                            fos.write(data);
-                            fos.close();
-                            Bitmap bMap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                cm1.takePicture(null, null, (data, camera) -> {
+                    try {
+                        File file = new File(Environment.getExternalStorageDirectory(), "test0");
+                        FileOutputStream fos = new FileOutputStream(file);
+                        fos.write(data);
+                        fos.close();
+                        Bitmap bMap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
-                            Bitmap bMapRotate;
-                            Configuration config = getResources().getConfiguration();
-                            if (config.orientation == 1) { // 坚拍
-                                Matrix matrix = new Matrix();
-                                matrix.reset();
-                                matrix.postRotate(270);
-                                bMapRotate = Bitmap.createBitmap(bMap, 0, 0,
-                                        bMap.getWidth(), bMap.getHeight(),
-                                        matrix, true);
-                                bMap = bMapRotate;
-                            }
-
-                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
-                            bMap.compress(Bitmap.CompressFormat.JPEG, 100, bos);//将图片压缩到流中
-                            bos.flush();//输出
-                            bos.close();//关闭
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }finally {
-                            //将注册的用户存储到本地
-                            Intent intent = getIntent();
-                            final String name = intent.getStringExtra("Name");
-                            SPUtils face_pass = SPUtils.getInstance("face_pass");
-                            face_pass.put("name",name); //存用户名
-                            face_pass.put("imgPath",Environment.getExternalStorageDirectory()+"/test0"); //用户的照片
-
-                            finalProgDialog.dismiss();
-
-                            Dialog alertDialog = new AlertDialog.Builder(UserfaceRegister.this).setTitle("注册结果：").setMessage("注册成功！请点击确定按钮返回主界面!")
-                                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            startActivity(new Intent(UserfaceRegister.this, MainActivity.class));
-                                            UserfaceRegister.this.finish();
-                                        }
-                                    })
-                                    .create();
-                            alertDialog.show();
+                        Bitmap bMapRotate;
+                        Configuration config = getResources().getConfiguration();
+                        if (config.orientation == 1) { // 坚拍
+                            Matrix matrix = new Matrix();
+                            matrix.reset();
+                            matrix.postRotate(270);
+                            bMapRotate = Bitmap.createBitmap(bMap, 0, 0,
+                                    bMap.getWidth(), bMap.getHeight(),
+                                    matrix, true);
+                            bMap = bMapRotate;
                         }
+
+                        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+                        bMap.compress(Bitmap.CompressFormat.JPEG, 100, bos);//将图片压缩到流中
+                        bos.flush();//输出
+                        bos.close();//关闭
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }finally {
+                        //将注册的用户存储到本地
+                        Intent intent = getIntent();
+                        final String name = intent.getStringExtra("Name");
+                        SPUtils face_pass = SPUtils.getInstance("face_pass");
+                        face_pass.put("name",name); //存用户名
+                        face_pass.put("imgPath",Environment.getExternalStorageDirectory()+"/test0"); //用户的照片
+
+                        finalProgDialog.dismiss();
+
+                        Dialog alertDialog = new AlertDialog.Builder(UserfaceRegister.this).setTitle("注册结果：").setMessage("注册成功！请点击确定按钮返回主界面!")
+                                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        startActivity(new Intent(UserfaceRegister.this, MainActivity.class));
+                                        UserfaceRegister.this.finish();
+                                    }
+                                })
+                                .create();
+                        alertDialog.show();
                     }
                 });//此处camera调用结束
 

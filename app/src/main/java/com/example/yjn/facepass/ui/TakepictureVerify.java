@@ -18,6 +18,7 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -43,6 +44,9 @@ import com.zhihu.matisse.engine.impl.GlideEngine;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+
+import top.zibin.luban.Luban;
 
 /**
  * 登录验证
@@ -188,65 +192,81 @@ public class TakepictureVerify extends AppCompatActivity {
         progDialog.setCancelable(false);
         progDialog.setMessage("正在验证信息，请稍候...");
         progDialog.show();
-
         SPUtils face_pass = SPUtils.getInstance("face_pass");
         face_pass.getString("name", ""); //存用户名
         String registerImg = face_pass.getString("imgPath", Environment.getExternalStorageDirectory() + "/test0"); //用户的照片
 
         // https://console.faceplusplus.com.cn/documents/4887586
-        OkGo.<String>post("https://api-cn.faceplusplus.com/facepp/v3/compare")
-                .tag(this)
-                .params("api_key", Constant.KEY)
-                .params("api_secret", Constant.SECRET)
-                .params("image_file1", new File(imgPath))//自己拍照的
-                .params("image_file2", new File(registerImg)) //对比的对象图
-                .execute(new StringCallback() {
-                    @Override
-                    public void onSuccess(Response<String> response) {
-                        Log.i("yjn", "成功 response = " + response.body());
+        try {
+            OkGo.<String>post("https://api-cn.faceplusplus.com/facepp/v3/compare")
+                    .tag(this)
+                    .params("api_key", Constant.KEY)
+                    .params("api_secret", Constant.SECRET)
+                    .params("image_file1", Luban.with(this).load(new File(imgPath)).get())//自己拍照的
+                    .params("image_file2", Luban.with(this).load(new File(registerImg)).get()) //对比的对象图
+                    .execute(new StringCallback() {
+                        @Override
+                        public void onSuccess(Response<String> response) {
+                            Log.i("yjn", "成功 response = " + response.body());
 
-                        FaceCompare faceCompare = new Gson().fromJson(response.body(), FaceCompare.class);
-
-                        if (faceCompare.getFaces1() != null) {
-                            /**
-                             * 一组用于参考的置信度阈值，包含以下三个字段。每个字段的值为一个 [0,100] 的浮点数，小数点后 3 位有效数字。
-                             1e-3：误识率为千分之一的置信度阈值；
-                             1e-4：误识率为万分之一的置信度阈值；
-                             1e-5：误识率为十万分之一的置信度阈值；
-                             如果置信值低于“千分之一”阈值则不建议认为是同一个人；如果置信值超过“十万分之一”阈值，则是同一个人的几率非常高。
-                             */
-                            if (faceCompare.getThresholds() == null) {
-                                //如果传入图片但图片中未检测到人脸，则无法进行比对，本字段不返回。
-                                Toast.makeText(TakepictureVerify.this, "未识别到人脸", Toast.LENGTH_SHORT).show();
+                            if (response.body().contains("error_message")){
                                 finishThen2Main();
+                                Toast.makeText(TakepictureVerify.this, "匹配出错", Toast.LENGTH_SHORT).show();
+                                return;
                             }
-                            if (faceCompare.getConfidence() < faceCompare.getThresholds().get_$1e3()) {
-                                Toast.makeText(TakepictureVerify.this, "不是同一个人", Toast.LENGTH_SHORT).show();
-                            } else if (faceCompare.getConfidence() > faceCompare.getThresholds().get_$1e5()) {
-                                Toast.makeText(TakepictureVerify.this, "匹配成功", Toast.LENGTH_SHORT).show();
 
-                                // 验证成功，跳转浏览器， 测试下
-                                Intent intent = new Intent(Intent.ACTION_VIEW);    //为Intent设置Action属性
-                                intent.setData(Uri.parse("http://www.baidu.com")); //为Intent设置DATA属性
-                                startActivity(intent);
+                            FaceCompare faceCompare = new Gson().fromJson(response.body(), FaceCompare.class);
+
+                            if (faceCompare.getFaces1() != null) {
+                                /**
+                                 * 一组用于参考的置信度阈值，包含以下三个字段。每个字段的值为一个 [0,100] 的浮点数，小数点后 3 位有效数字。
+                                 1e-3：误识率为千分之一的置信度阈值；
+                                 1e-4：误识率为万分之一的置信度阈值；
+                                 1e-5：误识率为十万分之一的置信度阈值；
+                                 如果置信值低于“千分之一”阈值则不建议认为是同一个人；如果置信值超过“十万分之一”阈值，则是同一个人的几率非常高。
+                                 */
+                                if (faceCompare.getThresholds() == null) {
+                                    //如果传入图片但图片中未检测到人脸，则无法进行比对，本字段不返回。
+                                    Toast.makeText(TakepictureVerify.this, "未识别到人脸", Toast.LENGTH_SHORT).show();
+                                    finishThen2Main();
+                                }
+
+                                //不为空
+                                if (!TextUtils.isEmpty(faceCompare.getThresholds().get_$1e3() + "")) {
+                                    if (faceCompare.getConfidence() < faceCompare.getThresholds().get_$1e3()) {
+                                        Toast.makeText(TakepictureVerify.this, "不是同一个人", Toast.LENGTH_SHORT).show();
+                                    } else if (faceCompare.getConfidence() > faceCompare.getThresholds().get_$1e5()) {
+                                        Toast.makeText(TakepictureVerify.this, "匹配成功", Toast.LENGTH_SHORT).show();
+
+                                        // 验证成功，跳转浏览器， 测试下
+                                        Intent intent = new Intent(Intent.ACTION_VIEW);    //为Intent设置Action属性
+                                        intent.setData(Uri.parse("http://www.baidu.com")); //为Intent设置DATA属性
+                                        startActivity(intent);
+                                    }
+                                }else {
+                                    finishThen2Main();
+                                    Toast.makeText(TakepictureVerify.this, "不是同一个人", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                // {"time_used": 372, "error_message": "IMAGE_ERROR_UNSUPPORTED_FORMAT: image_file1", "request_id": "1503306112,dd26b29f-c22a-4d7f-98ab-b796febcc578"}
+                                // 可能是图片格式不支持，传Gif是不行的
+                                Log.e("yjn", "返回成功，但是参数有问题");
+                                Toast.makeText(TakepictureVerify.this, "匹配失败", Toast.LENGTH_SHORT).show();
                             }
-                        } else {
-                            // {"time_used": 372, "error_message": "IMAGE_ERROR_UNSUPPORTED_FORMAT: image_file1", "request_id": "1503306112,dd26b29f-c22a-4d7f-98ab-b796febcc578"}
-                            // 可能是图片格式不支持，传Gif是不行的
-                            Log.e("yjn", "返回成功，但是参数有问题");
-                            Toast.makeText(TakepictureVerify.this, "匹配失败", Toast.LENGTH_SHORT).show();
+
+                            finishThen2Main();
                         }
 
-                        finishThen2Main();
-                    }
-
-                    @Override
-                    public void onError(Response<String> response) {
-                        finishThen2Main();
-                        Log.e("yjn", "上传失败");
-                        Toast.makeText(TakepictureVerify.this, "匹配出错", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                        @Override
+                        public void onError(Response<String> response) {
+                            finishThen2Main();
+                            Log.e("yjn", "上传失败");
+                            Toast.makeText(TakepictureVerify.this, "匹配出错", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
