@@ -209,9 +209,9 @@ public class TakepictureVerify extends AppCompatActivity {
                         public void onSuccess(Response<String> response) {
                             Log.i("yjn", "成功 response = " + response.body());
 
-                            if (response.body().contains("error_message")){
+                            if (response.body().contains("CONCURRENCY_LIMIT_EXCEEDED")){
                                 finishThen2Main();
-                                Toast.makeText(TakepictureVerify.this, "匹配出错", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(TakepictureVerify.this, "请求过于频繁", Toast.LENGTH_SHORT).show();
                                 return;
                             }
 
